@@ -2,8 +2,15 @@ const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
 
-const uploadDir = path.join(__dirname, '..', 'uploads', 'products');
-fs.mkdirSync(uploadDir, { recursive: true });
+const uploadDir = process.env.VERCEL
+  ? path.join('/tmp', 'uploads', 'products')
+  : path.join(__dirname, '..', 'uploads', 'products');
+
+try {
+  fs.mkdirSync(uploadDir, { recursive: true });
+} catch (err) {
+  console.warn('⚠️ Could not create upload directory:', err.message);
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),

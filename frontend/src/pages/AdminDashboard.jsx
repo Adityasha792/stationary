@@ -7,6 +7,7 @@ import {
   X, Save, Upload,
 } from 'lucide-react';
 import { adminService } from '../services/productService';
+import api from '../services/api';
 import { formatPrice, formatDate, ORDER_STATUS } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -508,11 +509,8 @@ function AdminProductList({ onEdit, onDelete }) {
 
   useEffect(() => {
     adminService.getAllOrders({ limit: 1 }) // Just to check admin; actual product fetch:
-    fetch('http://localhost:5000/api/products?limit=50', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('nexcart_token')}` }
-    })
-    .then(r => r.json())
-    .then(d => setProducts(d.products || []))
+    api.get('/products?limit=50')
+    .then(res => setProducts(res.data.products || []))
     .catch(() => {})
     .finally(() => setLoading(false));
   }, []);
