@@ -15,8 +15,12 @@ app.use(compression());
 app.use(morgan(process.env.NODE_ENV === 'development' ? 'dev' : 'combined'));
 
 // ─── CORS ────────────────────────────────────────────────────────
+const clientOrigin = process.env.CLIENT_ORIGIN
+  ? process.env.CLIENT_ORIGIN.replace(/\/$/, '')
+  : 'http://localhost:3000';
+
 app.use(cors({
-  origin: process.env.CLIENT_ORIGIN || 'http://localhost:3000',
+  origin: clientOrigin,
   credentials: true,
 }));
 
