@@ -5,7 +5,7 @@ const {
 } = require('../controllers/adminController');
 const { protect } = require('../middleware/auth');
 const { adminOnly } = require('../middleware/admin');
-const upload = require('../middleware/upload');
+const { upload } = require('../middleware/upload');
 
 router.use(protect, adminOnly);
 

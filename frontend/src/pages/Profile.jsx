@@ -149,7 +149,8 @@ export default function Profile() {
                         {/* Items preview */}
                         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                           {order.items?.slice(0,4).map(item => (
-                            <img key={item.id} src={item.image_url} alt={item.title} className="w-12 h-12 object-cover rounded-xl flex-shrink-0" />
+                            <img key={item.id} src={item.image_url} alt={item.title} className="w-12 h-12 object-cover rounded-xl flex-shrink-0"
+                              onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=48'; }} />
                           ))}
                           {order.items?.length > 4 && (
                             <div className="w-12 h-12 rounded-xl bg-dark-100 dark:bg-dark-700 flex items-center justify-center text-xs text-dark-500 flex-shrink-0">

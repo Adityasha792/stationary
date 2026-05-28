@@ -64,7 +64,8 @@ export default function OrderSuccess() {
             <div className="space-y-3">
               {order.items?.map(item => (
                 <div key={item.id} className="flex gap-3 items-center">
-                  <img src={item.image_url} alt={item.title} className="w-12 h-12 object-cover rounded-xl flex-shrink-0" />
+                  <img src={item.image_url} alt={item.title} className="w-12 h-12 object-cover rounded-xl flex-shrink-0"
+                    onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=48'; }} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-dark-800 dark:text-dark-100 truncate">{item.title}</p>
                     <p className="text-xs text-dark-400">Qty: {item.quantity} × {formatPrice(item.price_at_purchase)}</p>

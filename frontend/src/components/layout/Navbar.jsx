@@ -139,7 +139,8 @@ export default function Navbar() {
                         onClick={() => { setSearchFocus(false); setSearchQuery(''); }}
                         className="flex items-center gap-3 px-4 py-3 hover:bg-dark-50 dark:hover:bg-dark-700 transition-colors duration-150"
                       >
-                        <img src={s.image_url} alt={s.title} className="w-10 h-10 object-cover rounded-lg" />
+                        <img src={s.image_url} alt={s.title} className="w-10 h-10 object-cover rounded-lg"
+                          onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40'; }} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-dark-800 dark:text-dark-100 truncate">{s.title}</p>
                           <p className="text-xs text-dark-400">{s.category} • {formatPrice(s.price)}</p>

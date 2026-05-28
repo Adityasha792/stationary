@@ -67,7 +67,8 @@ export default function CartPage() {
                 className="card p-4 flex gap-4"
               >
                 <Link to={`/products/${item.product_id}`} className="flex-shrink-0">
-                  <img src={item.image_url} alt={item.title} className="w-24 h-24 object-cover rounded-xl hover:opacity-80 transition-opacity" />
+                  <img src={item.image_url} alt={item.title} className="w-24 h-24 object-cover rounded-xl hover:opacity-80 transition-opacity"
+                    onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=96'; }} />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link to={`/products/${item.product_id}`} className="font-semibold text-dark-800 dark:text-dark-100 hover:text-primary-600 dark:hover:text-primary-400 transition-colors line-clamp-2">

@@ -95,6 +95,7 @@ export default function CartSidebar() {
                         src={item.image_url}
                         alt={item.title}
                         className="w-16 h-16 object-cover rounded-xl flex-shrink-0 hover:opacity-80 transition-opacity"
+                        onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=64'; }}
                       />
                     </Link>
                     <div className="flex-1 min-w-0">

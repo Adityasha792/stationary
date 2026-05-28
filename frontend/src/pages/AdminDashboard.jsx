@@ -270,7 +270,8 @@ export default function AdminDashboard() {
                     {(data?.topProducts || []).map((p, i) => (
                       <div key={i} className="flex items-center gap-3">
                         <span className="font-display font-bold text-dark-300 dark:text-dark-600 text-sm w-4">#{i+1}</span>
-                        <img src={p.image_url} alt={p.title} className="w-10 h-10 object-cover rounded-lg flex-shrink-0" />
+                        <img src={p.image_url} alt={p.title} className="w-10 h-10 object-cover rounded-lg flex-shrink-0"
+                          onError={e => { e.target.onerror = null; e.target.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Crect width=%2240%22 height=%2240%22 fill=%22%23e2e8f0%22/%3E%3C/svg%3E'; }} />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-dark-800 dark:text-dark-100 truncate">{p.title}</p>
                           <p className="text-xs text-dark-400">{Number(p.total_sold).toLocaleString()} sold</p>
@@ -521,7 +522,8 @@ function AdminProductList({ onEdit, onDelete }) {
     <div className="space-y-2">
       {products.map(p => (
         <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-dark-50 dark:hover:bg-dark-800 transition-colors">
-          <img src={p.image_url} alt={p.title} className="w-12 h-12 object-cover rounded-xl flex-shrink-0" />
+          <img src={p.image_url} alt={p.title} className="w-12 h-12 object-cover rounded-xl flex-shrink-0"
+            onError={e => { e.target.onerror = null; e.target.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2248%22 height=%2248%22%3E%3Crect width=%2248%22 height=%2248%22 fill=%22%23e2e8f0%22/%3E%3C/svg%3E'; }} />
           <div className="flex-1 min-w-0">
             <p className="font-medium text-sm text-dark-800 dark:text-dark-100 truncate">{p.title}</p>
             <p className="text-xs text-dark-400">{p.category} · Stock: {p.stock} · {formatPrice(p.price)}</p>

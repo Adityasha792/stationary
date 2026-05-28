@@ -58,7 +58,8 @@ export default function Orders() {
                 <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
                   {order.items?.map(item => (
                     <div key={item.id} className="flex-shrink-0">
-                      <img src={item.image_url} alt={item.title} className="w-14 h-14 object-cover rounded-xl" title={item.title} />
+                      <img src={item.image_url} alt={item.title} className="w-14 h-14 object-cover rounded-xl" title={item.title}
+                        onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=56'; }} />
                     </div>
                   ))}
                 </div>
