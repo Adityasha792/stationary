@@ -2,44 +2,62 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
-  ShoppingCart, Heart, Search, Menu, X, Sun, Moon, User,
-  LogOut, Package, LayoutDashboard, ChevronDown, Zap,
+  ShoppingCart, Heart, Search, Menu, X, User,
+  LogOut, Package, LayoutDashboard, ChevronDown,
+  MapPin, ChevronRight, Globe,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
-import { useTheme } from '../../context/ThemeContext';
 import { useDebounce } from '../../hooks/useDebounce';
 import { productService } from '../../services/productService';
 import { formatPrice } from '../../utils/formatters';
 
+const CATEGORIES = [
+  'All', 'Electronics', 'Fashion', 'Home & Kitchen',
+  'Books', 'Sports', 'Beauty', 'Gaming', 'Furniture',
+];
+
+const NAV_LINKS = [
+  { label: 'Today\'s Deals', to: '/products?featured=true' },
+  { label: 'Electronics',    to: '/products?category=Electronics' },
+  { label: 'Fashion',        to: '/products?category=Fashion' },
+  { label: 'Home & Kitchen', to: '/products?category=Home+%26+Kitchen' },
+  { label: 'Gaming',         to: '/products?category=Gaming' },
+  { label: 'Sports',         to: '/products?category=Sports' },
+  { label: 'Beauty',         to: '/products?category=Beauty' },
+  { label: 'Books',          to: '/products?category=Books' },
+];
+
 export default function Navbar() {
   const { user, logout, isAdmin } = useAuth();
   const { cartCount, setSidebarOpen } = useCart();
-  const { dark, toggleTheme } = useTheme();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate  = useNavigate();
+  const location  = useLocation();
 
-  const [searchQuery, setSearchQuery]     = useState('');
-  const [suggestions, setSuggestions]     = useState([]);
-  const [searchFocus, setSearchFocus]     = useState(false);
-  const [mobileOpen, setMobileOpen]       = useState(false);
-  const [profileOpen, setProfileOpen]     = useState(false);
-  const [scrolled, setScrolled]           = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchCat, setSearchCat]     = useState('All');
+  const [suggestions, setSuggestions] = useState([]);
+  const [searchFocus, setSearchFocus] = useState(false);
+  const [mobileOpen, setMobileOpen]   = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [catOpen, setCatOpen]         = useState(false);
+  const [scrolled, setScrolled]       = useState(false);
   const searchRef = useRef(null);
 
   const debouncedSearch = useDebounce(searchQuery, 300);
 
-  // Scroll detection
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Close mobile menu on route change
-  useEffect(() => { setMobileOpen(false); setProfileOpen(false); }, [location]);
+  useEffect(() => {
+    setMobileOpen(false);
+    setProfileOpen(false);
+    setCatOpen(false);
+  }, [location]);
 
-  // Live search suggestions
   useEffect(() => {
     if (debouncedSearch.length < 2) { setSuggestions([]); return; }
     productService.searchSuggestions(debouncedSearch)
@@ -47,11 +65,10 @@ export default function Navbar() {
       .catch(() => setSuggestions([]));
   }, [debouncedSearch]);
 
-  // Click outside to close dropdowns
   useEffect(() => {
     const handler = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) setSearchFocus(false);
-      if (!e.target.closest('.profile-dropdown')) setProfileOpen(false);
+      if (!e.target.closest('.profile-menu')) setProfileOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -59,92 +76,137 @@ export default function Navbar() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery(''); setSuggestions([]); setSearchFocus(false);
-    }
+    if (!searchQuery.trim()) return;
+    const params = new URLSearchParams({ search: searchQuery.trim() });
+    if (searchCat && searchCat !== 'All') params.set('category', searchCat);
+    navigate(`/products?${params.toString()}`);
+    setSearchQuery('');
+    setSuggestions([]);
+    setSearchFocus(false);
   };
-
-  const navLinks = [
-    { label: 'Home',       to: '/' },
-    { label: 'Products',   to: '/products' },
-    { label: 'Electronics',to: '/products?category=Electronics' },
-    { label: 'Fashion',    to: '/products?category=Fashion' },
-  ];
 
   return (
     <>
-      <motion.nav
-        initial={{ y: -80 }}
-        animate={{ y: 0 }}
-        transition={{ type: 'spring', stiffness: 120, damping: 20 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-400
-          ${scrolled
-            ? 'bg-white/90 dark:bg-dark-900/90 backdrop-blur-xl shadow-glass border-b border-dark-100/50 dark:border-dark-700/50'
-            : 'bg-white/70 dark:bg-dark-950/70 backdrop-blur-md'
-          }`}
-      >
+      {/* ── Main Nav ─────────────────────────────────────────────── */}
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${scrolled ? 'shadow-lg' : ''}`}
+        style={{ backgroundColor: '#131921' }}>
+
+        {/* Top Bar */}
         <div className="nexcart-container">
-          <div className="flex items-center h-16 gap-4">
+          <div className="flex items-center h-14 gap-2 sm:gap-4">
 
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 flex-shrink-0 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center shadow-glow-sm group-hover:shadow-glow transition-all duration-300">
-                <Zap className="w-4 h-4 text-white" />
+            <Link to="/" className="flex-shrink-0 flex items-center gap-1.5 group border-2 border-transparent hover:border-white/30 rounded px-2 py-1 transition-all duration-150">
+              <div className="w-7 h-7 rounded bg-[#FF9900] flex items-center justify-center">
+                <ShoppingCart className="w-4 h-4 text-[#131921]" />
               </div>
-              <span className="font-display text-xl font-bold gradient-text hidden sm:block">NexCart</span>
+              <span className="font-display font-bold text-white text-lg leading-none hidden sm:block">
+                Nex<span className="text-[#FF9900]">Cart</span>
+              </span>
             </Link>
 
-            {/* Nav Links — Desktop */}
-            <div className="hidden lg:flex items-center gap-1 ml-2">
-              {navLinks.map(link => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium text-dark-600 dark:text-dark-300 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-200"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
+            {/* Delivery Location */}
+            <button
+              className="hidden lg:flex flex-col items-start border-2 border-transparent hover:border-white/30 rounded px-2 py-1 transition-all duration-150 min-w-[120px] group"
+              title="Select delivery location"
+            >
+              <span className="text-[#A0AEC0] text-[10px] leading-none group-hover:text-white">Deliver to</span>
+              <div className="flex items-center gap-1 mt-0.5">
+                <MapPin className="w-3.5 h-3.5 text-white flex-shrink-0" />
+                <span className="text-white font-bold text-sm">India</span>
+              </div>
+            </button>
 
             {/* Search Bar */}
-            <div className="flex-1 max-w-xl mx-auto relative" ref={searchRef}>
-              <form onSubmit={handleSearch} className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-dark-400 pointer-events-none" />
+            <div className="flex-1 max-w-3xl relative" ref={searchRef}>
+              <form onSubmit={handleSearch} className="flex h-10 rounded-lg overflow-hidden shadow-sm">
+                {/* Category dropdown */}
+                <div className="relative hidden sm:block">
+                  <button
+                    type="button"
+                    onClick={() => setCatOpen(!catOpen)}
+                    className="h-full flex items-center gap-1 px-3 text-xs font-medium text-dark-900 bg-[#e8e0d0] hover:bg-[#d5cdc0] whitespace-nowrap"
+                  >
+                    <span className="hidden md:inline">{searchCat === 'All' ? 'All' : searchCat.length > 10 ? searchCat.slice(0, 9) + '…' : searchCat}</span>
+                    <span className="md:hidden">All</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  <AnimatePresence>
+                    {catOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.1 }}
+                        className="absolute top-full left-0 mt-0.5 w-48 rounded-lg overflow-hidden shadow-xl z-50"
+                        style={{ backgroundColor: '#232F3E', border: '1px solid rgba(255,255,255,0.1)' }}
+                      >
+                        {CATEGORIES.map(cat => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => { setSearchCat(cat); setCatOpen(false); }}
+                            className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                              searchCat === cat
+                                ? 'text-[#FF9900] font-semibold bg-white/5'
+                                : 'text-[#E7E9EA] hover:bg-white/5'
+                            }`}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Input */}
                 <input
                   type="text"
-                  placeholder="Search products, brands..."
+                  placeholder="Search NexCart…"
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   onFocus={() => setSearchFocus(true)}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-dark-200 dark:border-dark-600 bg-dark-50 dark:bg-dark-800 text-sm text-dark-800 dark:text-dark-100 placeholder-dark-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent focus:bg-white dark:focus:bg-dark-700 transition-all duration-200"
+                  className="flex-1 h-full px-4 text-dark-900 text-sm focus:outline-none bg-white placeholder-[#6B7280]"
                 />
+
+                {/* Search button */}
+                <button
+                  type="submit"
+                  className="px-4 flex items-center justify-center bg-[#FEBD69] hover:bg-[#FF9900] transition-colors duration-150"
+                >
+                  <Search className="w-5 h-5 text-dark-900" />
+                </button>
               </form>
 
-              {/* Search Suggestions Dropdown */}
+              {/* Suggestions */}
               <AnimatePresence>
                 {searchFocus && suggestions.length > 0 && (
                   <motion.div
-                    initial={{ opacity: 0, y: -10 }}
+                    initial={{ opacity: 0, y: -8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute top-full left-0 right-0 mt-2 card shadow-glass overflow-hidden z-50"
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.12 }}
+                    className="absolute top-full left-0 right-0 mt-1 rounded-lg overflow-hidden z-50 shadow-xl"
+                    style={{ backgroundColor: '#131921', border: '1px solid rgba(255,255,255,0.1)' }}
                   >
                     {suggestions.map(s => (
                       <Link
                         key={s.id}
                         to={`/products/${s.id}`}
                         onClick={() => { setSearchFocus(false); setSearchQuery(''); }}
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-dark-50 dark:hover:bg-dark-700 transition-colors duration-150"
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors duration-100"
                       >
-                        <img src={s.image_url} alt={s.title} className="w-10 h-10 object-cover rounded-lg"
-                          onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40'; }} />
+                        <img
+                          src={s.image_url} alt={s.title}
+                          className="w-10 h-10 object-cover rounded flex-shrink-0"
+                          onError={e => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=40'; }}
+                        />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-dark-800 dark:text-dark-100 truncate">{s.title}</p>
-                          <p className="text-xs text-dark-400">{s.category} • {formatPrice(s.price)}</p>
+                          <p className="text-sm text-[#E7E9EA] truncate">{s.title}</p>
+                          <p className="text-xs text-[#A0AEC0]">{s.category} · {formatPrice(s.price)}</p>
                         </div>
+                        <ChevronRight className="w-4 h-4 text-[#6B7280] flex-shrink-0" />
                       </Link>
                     ))}
                   </motion.div>
@@ -153,92 +215,81 @@ export default function Navbar() {
             </div>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              {/* Theme Toggle */}
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={toggleTheme}
-                className="p-2 rounded-xl text-dark-500 dark:text-dark-300 hover:bg-dark-100 dark:hover:bg-dark-700 transition-all duration-200"
-                aria-label="Toggle dark mode"
-              >
-                {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </motion.button>
+            <div className="flex items-center gap-1 flex-shrink-0">
 
-              {/* Wishlist */}
-              {user && (
-                <Link to="/wishlist" className="p-2 rounded-xl text-dark-500 dark:text-dark-300 hover:bg-dark-100 dark:hover:bg-dark-700 transition-all duration-200">
-                  <Heart className="w-5 h-5" />
-                </Link>
-              )}
+              {/* Language */}
+              <button className="hidden xl:flex items-center gap-1 border-2 border-transparent hover:border-white/30 rounded px-2 py-1 transition-all duration-150">
+                <Globe className="w-4 h-4 text-white" />
+                <span className="text-white text-sm font-medium">EN</span>
+                <ChevronDown className="w-3 h-3 text-white" />
+              </button>
 
-              {/* Cart */}
-              <motion.button
-                whileTap={{ scale: 0.9 }}
-                onClick={() => user ? setSidebarOpen(true) : navigate('/login')}
-                className="relative p-2 rounded-xl text-dark-500 dark:text-dark-300 hover:bg-dark-100 dark:hover:bg-dark-700 transition-all duration-200"
-              >
-                <ShoppingCart className="w-5 h-5" />
-                <AnimatePresence>
-                  {cartCount > 0 && (
-                    <motion.span
-                      key={cartCount}
-                      initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                      className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-accent-500 text-white text-[10px] font-bold shadow-glow-sm"
-                    >
-                      {cartCount > 99 ? '99+' : cartCount}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
-
-              {/* User Menu */}
+              {/* Account */}
               {user ? (
-                <div className="relative profile-dropdown">
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
+                <div className="relative profile-menu">
+                  <button
                     onClick={() => setProfileOpen(!profileOpen)}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-dark-100 dark:hover:bg-dark-700 transition-all duration-200"
+                    className="flex flex-col items-start border-2 border-transparent hover:border-white/30 rounded px-2 py-1 transition-all duration-150 min-w-[80px]"
                   >
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-400 to-accent-400 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                      {user.avatar
-                        ? <img src={user.avatar} alt={user.name} className="w-7 h-7 rounded-full object-cover" />
-                        : user.name?.[0]?.toUpperCase()}
+                    <span className="text-[#A0AEC0] text-[10px] leading-none">Hello, {user.name?.split(' ')[0]}</span>
+                    <div className="flex items-center gap-0.5 mt-0.5">
+                      <span className="text-white font-bold text-sm">Account</span>
+                      <ChevronDown className="w-3 h-3 text-white" />
                     </div>
-                    <ChevronDown className={`w-3.5 h-3.5 text-dark-400 hidden sm:block transition-transform duration-200 ${profileOpen ? 'rotate-180' : ''}`} />
-                  </motion.button>
+                  </button>
 
                   <AnimatePresence>
                     {profileOpen && (
                       <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                        initial={{ opacity: 0, scale: 0.96, y: -8 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                        transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-2 w-56 card shadow-glass overflow-hidden z-50"
+                        exit={{ opacity: 0, scale: 0.96, y: -8 }}
+                        transition={{ duration: 0.12 }}
+                        className="absolute right-0 top-full mt-1 w-64 rounded-lg overflow-hidden z-50 shadow-xl"
+                        style={{ backgroundColor: '#232F3E', border: '1px solid rgba(255,255,255,0.1)' }}
                       >
-                        <div className="px-4 py-3 border-b border-dark-100 dark:border-dark-700">
-                          <p className="text-sm font-semibold text-dark-800 dark:text-dark-100">{user.name}</p>
-                          <p className="text-xs text-dark-400 truncate">{user.email}</p>
+                        <div className="p-4 border-b border-white/10">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-[#FF9900] flex items-center justify-center text-dark-900 font-bold flex-shrink-0">
+                              {user.avatar
+                                ? <img src={user.avatar} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+                                : user.name?.[0]?.toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-[#E7E9EA] truncate">{user.name}</p>
+                              <p className="text-xs text-[#A0AEC0] truncate">{user.email}</p>
+                            </div>
+                          </div>
                         </div>
                         <div className="py-1">
-                          <Link to="/profile" className="flex items-center gap-3 px-4 py-2.5 text-sm text-dark-600 dark:text-dark-300 hover:bg-dark-50 dark:hover:bg-dark-700 transition-colors">
-                            <User className="w-4 h-4" /> My Profile
-                          </Link>
-                          <Link to="/orders" className="flex items-center gap-3 px-4 py-2.5 text-sm text-dark-600 dark:text-dark-300 hover:bg-dark-50 dark:hover:bg-dark-700 transition-colors">
-                            <Package className="w-4 h-4" /> My Orders
-                          </Link>
+                          {[
+                            { to: '/profile', icon: User,            label: 'Your Account' },
+                            { to: '/orders',  icon: Package,         label: 'Your Orders' },
+                            { to: '/wishlist',icon: Heart,           label: 'Your Wishlist' },
+                          ].map(item => (
+                            <Link key={item.to} to={item.to}
+                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#E7E9EA] hover:bg-white/5 transition-colors"
+                            >
+                              <item.icon className="w-4 h-4 text-[#A0AEC0]" />
+                              {item.label}
+                            </Link>
+                          ))}
                           {isAdmin && (
-                            <Link to="/admin" className="flex items-center gap-3 px-4 py-2.5 text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
-                              <LayoutDashboard className="w-4 h-4" /> Admin Panel
+                            <Link to="/admin"
+                              className="flex items-center gap-3 px-4 py-2.5 text-sm text-[#FF9900] hover:bg-white/5 transition-colors"
+                            >
+                              <LayoutDashboard className="w-4 h-4" />
+                              Admin Dashboard
                             </Link>
                           )}
                         </div>
-                        <div className="py-1 border-t border-dark-100 dark:border-dark-700">
+                        <div className="border-t border-white/10 py-1">
                           <button
                             onClick={logout}
-                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 transition-colors"
                           >
-                            <LogOut className="w-4 h-4" /> Logout
+                            <LogOut className="w-4 h-4" />
+                            Sign Out
                           </button>
                         </div>
                       </motion.div>
@@ -246,51 +297,193 @@ export default function Navbar() {
                   </AnimatePresence>
                 </div>
               ) : (
-                <Link to="/login" className="btn-primary text-xs px-4 py-2 hidden sm:inline-flex">
-                  Login
+                <Link
+                  to="/login"
+                  className="flex flex-col items-start border-2 border-transparent hover:border-white/30 rounded px-2 py-1 transition-all duration-150 min-w-[80px]"
+                >
+                  <span className="text-[#A0AEC0] text-[10px] leading-none">Hello, Guest</span>
+                  <div className="flex items-center gap-0.5 mt-0.5">
+                    <span className="text-white font-bold text-sm">Sign in</span>
+                    <ChevronDown className="w-3 h-3 text-white" />
+                  </div>
                 </Link>
               )}
 
-              {/* Mobile menu toggle */}
+              {/* Returns & Orders */}
+              <Link to="/orders"
+                className="hidden md:flex flex-col items-start border-2 border-transparent hover:border-white/30 rounded px-2 py-1 transition-all duration-150 min-w-[80px]"
+              >
+                <span className="text-[#A0AEC0] text-[10px] leading-none">Returns</span>
+                <span className="text-white font-bold text-sm mt-0.5">& Orders</span>
+              </Link>
+
+              {/* Wishlist */}
+              {user && (
+                <Link to="/wishlist"
+                  className="relative border-2 border-transparent hover:border-white/30 rounded p-2 transition-all duration-150"
+                >
+                  <Heart className="w-6 h-6 text-white" />
+                </Link>
+              )}
+
+              {/* Cart */}
+              <button
+                onClick={() => user ? setSidebarOpen(true) : navigate('/login')}
+                className="relative flex items-end gap-1 border-2 border-transparent hover:border-white/30 rounded px-2 py-1 transition-all duration-150 group"
+              >
+                <div className="relative">
+                  <ShoppingCart className="w-8 h-8 text-white" />
+                  <AnimatePresence>
+                    {cartCount > 0 && (
+                      <motion.span
+                        key={cartCount}
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="absolute -top-2 -right-1 min-w-[20px] h-5 flex items-center justify-center rounded-full bg-[#FF9900] text-dark-900 text-[11px] font-extrabold px-1"
+                      >
+                        {cartCount > 99 ? '99+' : cartCount}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <span className="text-white font-bold text-sm hidden sm:block pb-1">Cart</span>
+              </button>
+
+              {/* Mobile Hamburger */}
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="p-2 rounded-xl text-dark-500 dark:text-dark-300 hover:bg-dark-100 dark:hover:bg-dark-700 transition-all lg:hidden"
+                className="lg:hidden p-2 rounded border-2 border-transparent hover:border-white/30 transition-all"
               >
-                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Category Nav Strip */}
+        <div style={{ backgroundColor: '#232F3E', borderTop: '1px solid rgba(255,255,255,0.06)' }}
+          className="hidden lg:block">
+          <div className="nexcart-container">
+            <div className="flex items-center gap-0 h-10 overflow-x-auto no-scrollbar">
+              {/* All / Hamburger */}
+              <Link
+                to="/products"
+                className="flex items-center gap-1.5 px-3 h-full text-sm text-[#E7E9EA] font-medium whitespace-nowrap hover:text-white hover:bg-white/10 border-2 border-transparent hover:border-white/20 rounded transition-all duration-150"
+              >
+                <Menu className="w-4 h-4" />
+                All
+              </Link>
+              {NAV_LINKS.map(link => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="px-3 h-full flex items-center text-sm text-[#E7E9EA] whitespace-nowrap hover:text-white hover:bg-white/10 border-2 border-transparent hover:border-white/20 rounded transition-all duration-150"
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <Link to="/products"
+                className="px-3 h-full flex items-center text-sm text-[#FEBD69] whitespace-nowrap hover:text-[#FF9900] transition-colors duration-150 ml-auto"
+              >
+                See All Deals →
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu Drawer */}
         <AnimatePresence>
           {mobileOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="overflow-hidden border-t border-dark-100 dark:border-dark-700 bg-white dark:bg-dark-900 lg:hidden"
-            >
-              <div className="nexcart-container py-3 space-y-1">
-                {navLinks.map(link => (
-                  <Link key={link.to} to={link.to} className="block px-3 py-2 rounded-xl text-sm font-medium text-dark-600 dark:text-dark-300 hover:bg-dark-50 dark:hover:bg-dark-800 transition-colors">
-                    {link.label}
-                  </Link>
-                ))}
-                {!user && (
-                  <Link to="/login" className="block px-3 py-2 rounded-xl text-sm font-semibold text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors">
-                    Login / Sign Up
-                  </Link>
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileOpen(false)}
+                className="fixed inset-0 bg-black/70 z-40 lg:hidden"
+                style={{ top: '56px' }}
+              />
+              <motion.div
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="fixed left-0 top-14 bottom-0 w-80 z-50 overflow-y-auto lg:hidden"
+                style={{ backgroundColor: '#131921', borderRight: '1px solid rgba(255,255,255,0.1)' }}
+              >
+                {/* User section */}
+                <div className="p-4 border-b border-white/10" style={{ backgroundColor: '#232F3E' }}>
+                  {user ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#FF9900] flex items-center justify-center text-dark-900 font-bold">
+                        {user.name?.[0]?.toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[#E7E9EA] text-sm">Hello, {user.name}</p>
+                        <p className="text-xs text-[#A0AEC0]">{user.email}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <Link to="/login" className="btn-amazon-orange w-full justify-center py-2.5 rounded-lg text-sm font-semibold">
+                      Sign In
+                    </Link>
+                  )}
+                </div>
+
+                {/* Nav links */}
+                <div className="py-2">
+                  <p className="px-4 py-2 text-xs text-[#6B7280] uppercase tracking-wider font-semibold">Browse</p>
+                  {NAV_LINKS.map(link => (
+                    <Link key={link.to} to={link.to}
+                      className="flex items-center justify-between px-4 py-3 text-sm text-[#E7E9EA] hover:bg-white/5 border-b border-white/5 transition-colors"
+                    >
+                      {link.label}
+                      <ChevronRight className="w-4 h-4 text-[#6B7280]" />
+                    </Link>
+                  ))}
+                </div>
+
+                {user && (
+                  <div className="py-2 border-t border-white/10">
+                    <p className="px-4 py-2 text-xs text-[#6B7280] uppercase tracking-wider font-semibold">Account</p>
+                    {[
+                      { to: '/profile', icon: User,    label: 'Your Account' },
+                      { to: '/orders',  icon: Package, label: 'Your Orders' },
+                      { to: '/wishlist',icon: Heart,   label: 'Your Wishlist' },
+                    ].map(item => (
+                      <Link key={item.to} to={item.to}
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-[#E7E9EA] hover:bg-white/5 transition-colors"
+                      >
+                        <item.icon className="w-4 h-4 text-[#A0AEC0]" />
+                        {item.label}
+                      </Link>
+                    ))}
+                    {isAdmin && (
+                      <Link to="/admin"
+                        className="flex items-center gap-3 px-4 py-3 text-sm text-[#FF9900] hover:bg-white/5 transition-colors"
+                      >
+                        <LayoutDashboard className="w-4 h-4" />
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <button
+                      onClick={logout}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-white/5 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
                 )}
-              </div>
-            </motion.div>
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
-      </motion.nav>
+      </header>
 
-      {/* Spacer */}
-      <div className="h-16" />
+      {/* Spacer — account for fixed navbar (top bar + category strip on desktop) */}
+      <div className="h-14 lg:h-[96px]" />
     </>
   );
 }
