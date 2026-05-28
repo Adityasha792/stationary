@@ -8,7 +8,8 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "setup": "node setup.js",
-    "migrate": "node migrate.js"
+    "migrate": "node migrate.js",
+    "fix:images": "node fix_local_images.js"
   },
   "keywords": [],
   "author": "",
